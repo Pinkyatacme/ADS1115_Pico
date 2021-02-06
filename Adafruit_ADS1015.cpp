@@ -28,7 +28,7 @@
     BSD license, all text here must be included in any redistribution
 */
 /**************************************************************************/
-#include "pico/stdlib.h"
+#include "hardware/i2c.h"
 #include <iostream>
 
 #include "Adafruit_ADS1015.h"
