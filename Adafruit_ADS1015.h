@@ -143,7 +143,7 @@ protected:
   adsGain_t m_gain;          ///< ADC gain
 
 public:
-    uint8_t m_i2cAddress;      ///< the I2C address
+  uint8_t m_i2cAddress;      ///< the I2C address
   Adafruit_ADS1015(uint8_t i2cAddress = ADS1015_ADDRESS);
   void begin(void);
   uint16_t readADC_SingleEnded(uint8_t channel);

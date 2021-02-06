@@ -21,6 +21,7 @@
 
     v1.0  - First release
     v1.1  - Added ADS1115 support - W. Earl
+    v1.2  - Attempt to port to Pi Pico - D. Tillotson
 
     @section license License
 
@@ -32,20 +33,15 @@
 
 #include "Adafruit_ADS1015.h"
 #define I2C_PORT i2c0
-uint8_t addr;
 /**************************************************************************/
 /*!
-    @brief  Abstract away platform differences in Arduino wire library
+    @brief  Replicate Arduino wire library reads
 
+    @param addr I2C address of the device
     @return the byte read
 */
 /**************************************************************************/
-static uint8_t i2cread(void) {
-//#if ARDUINO >= 100
-//  return Wire.read();
-//#else
-//  return Wire.receive();
-//#endif
+static uint8_t i2cread(uint8_t addr) {
     uint8_t buffer;
     i2c_read_blocking(I2C_PORT, addr, buffer, 1, false);
     return buffer;
@@ -53,17 +49,13 @@ static uint8_t i2cread(void) {
 
 /**************************************************************************/
 /*!
-    @brief  Abstract away platform differences in Arduino wire library
+    @brief  Replicate Arduino wire library writes
 
+    @param addr I2C address of the device
     @param x byte to write
 */
 /**************************************************************************/
-static void i2cwrite(uint8_t x) {
-//#if ARDUINO >= 100
-//  Wire.write((uint8_t)x);
-//#else
-//  Wire.send(x);
-//#endif
+static void i2cwrite(uint8_t addr, uint8_t x) {
     i2c_write_blocking(I2C_PORT, addr, &x, 1, false);
 }
 
@@ -77,11 +69,9 @@ static void i2cwrite(uint8_t x) {
 */
 /**************************************************************************/
 static void writeRegister(uint8_t i2cAddress, uint8_t reg, uint16_t value) {
-//  Wire.beginTransmission(i2cAddress);
-  i2cwrite((uint8_t)reg);
-  i2cwrite((uint8_t)(value >> 8));
-  i2cwrite((uint8_t)(value & 0xFF));
-//  Wire.endTransmission();
+  i2cwrite(i2cAddress, reg);
+  i2cwrite(i2cAddress, (uint8_t)(value >> 8));
+  i2cwrite(i2cAddress, (uint8_t)(value & 0xFF));
 }
 
 /**************************************************************************/
@@ -95,13 +85,9 @@ static void writeRegister(uint8_t i2cAddress, uint8_t reg, uint16_t value) {
 */
 /**************************************************************************/
 static uint16_t readRegister(uint8_t i2cAddress, uint8_t reg) {
-//  Wire.beginTransmission(i2cAddress);
-  i2cwrite(reg);
-//    Wire.endTransmission();
-//  i2c_write_blocking(I2C_PORT, i2cAddress, &reg, 1, false);
-//  Wire.requestFrom(i2cAddress, (uint8_t)2);
-    i2c_get_read_available(I2C_PORT);
-  return ((i2cread() << 8) | i2cread());
+  i2cwrite(i2cAddress, reg);
+  i2c_get_read_available(I2C_PORT);
+  return ((i2cread(i2cAddress) << 8) | i2cread(i2cAddress));
 }
 
 /**************************************************************************/
@@ -208,7 +194,6 @@ uint16_t Adafruit_ADS1015::readADC_SingleEnded(uint8_t channel) {
 
   // Set 'start single-conversion' bit
   config |= ADS1015_REG_CONFIG_OS_SINGLE;
-  addr = m_i2cAddress;
   // Write config register to the ADC
   writeRegister(m_i2cAddress, ADS1015_REG_POINTER_CONFIG, config);
 
